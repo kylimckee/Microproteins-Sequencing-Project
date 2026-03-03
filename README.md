@@ -80,8 +80,7 @@ ls -R
 
 ## Create QC Pipeline Working Directory
 
-The QC pipeline requires a working directory where the FASTQ files can be accessed. You can symlink these files instead 
-of copying them into the pipeline directory to prevent the duplication of large data files in your directory.
+The QC pipeline requires a working directory where the FASTQ files can be accessed. You can symlink these files instead of copying them into the pipeline directory to prevent the duplication of large data files in your directory.
 
 ```bash
 mkdir run_bulkRNA
@@ -89,6 +88,7 @@ cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 mkdir rawQC
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/rawQC
 mkdir fastqc
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 
 ln -s /data/mckeeka/bulkRNA_sarcoma/MCI_fastq_117_STS_FASTQ/
 ```
@@ -100,6 +100,7 @@ This pipeline was generated to perform analysis of the raw FASTQ data after sequ
 ### Install QC Tools
 
 ```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 conda create -n rawQC -c bioconda snakemake fastqc multiqc -y
 conda activate rawQC
 ```
@@ -110,52 +111,134 @@ conda activate rawQC
 nano rawQC_pipeline.smk
 
 # Add the following code to the configuration file:
-import glob
 
 SAMPLES = glob_wildcards("MCI_fastq_117_STS_FASTQ/{sample}.fastq.1.gz").sample
 
 rule all:
     input:
-        expand("run_bulkRNA/rawQC/fastqc/{sample}.fastq.{read}_fastqc.zip", sample=SAMPLES, read=[1,2]),
-        "run_bulkRNA/rawQC/multiqc_report.html"
+        expand("rawQC/fastqc/{sample}.fastq.{read}_fastqc.zip", sample=SAMPLES, read=[1,2]),
+        "rawQC/rawQC_multiqc_report.html"
 
 rule fastqc:
   input:
     "MCI_fastq_117_STS_FASTQ/{sample}.fastq.{read}.gz"
   output:
-    html="run_bulkRNA/rawQC/fastqc/{sample}.fastq.{read}_fastqc.html",
-    zip="run_bulkRNA/rawQC/fastqc/{sample}.fastq.{read}_fastqc.zip"
+    html="rawQC/fastqc/{sample}.fastq.{read}_fastqc.html",
+    zip="rawQC/fastqc/{sample}.fastq.{read}_fastqc.zip"
   threads: 4
   shell:
     """
-    fastqc -t {threads} -o run_bulkRNA/rawQC/fastqc {input}
+    fastqc -t {threads} -o rawQC/fastqc {input}
     """
 
 rule multiqc:
   input:
-    expand("run_bulkRNA/rawQC/fastqc/{sample}.fastq.{read}_fastqc.zip",
+    expand("rawQC/fastqc/{sample}.fastq.{read}_fastqc.zip",
             sample=SAMPLES,
             read=[1,2])
   output:
-    "run_bulkRNA/rawQC/multiqc_report.html"
+    "rawQC/rawQC_multiqc_report.html"
   shell:
     """
-    multiqc run_bulkRNA/rawQC/fastqc -o run_bulkRNA/rawQC
+    multiqc rawQC/fastqc -o run_bulkRNA/rawQC
     """
 ```
 
 ### Run Raw QC Configuration File
 
 The pipeline must be run on helix due to compute power.
+You also must redownload the QC tools in helix and activate Conda environment.
 
 ```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 snakemake -s rawQC_pipeline.smk
+```
+
+## Create CutAdapt Pipeline Working Directory
+
+The CutAdapt pipeline requires a working directory where the FASTQ files can be accessed.
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+mkdir CutAdapt
+mkdir trimmed_FASTQ
+mkdir logs
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/logs
+mkdir logs_CutAdapt
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+```
+
+## Generate CutAdapt Pipeline Configuration
+
+This pipeline was generated to cut the adapters from the raw FASTQ files after sequencing.
+
+### Install CutAdapt Tools
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+conda create -n CutAdapt -c bioconda snakemake cutadapt -y
+conda activate CutAdapt
+```
+
+### Create Snakemake CutAdapt Configuration File
+
+```bash
+nano CutAdapt_pipeline.smk
+
+# Add the following code to the configuration file:
+
+adapter = "AGATCGGAAGAG"     #Illumina Universal Adapter
+minimum_length = 15          #Decreased from the recommended 20 since I am interested in smORFs
+quality_trimming = "20,20"   #Recommended value
+overlap = 5                  #Recommended value
+threads = 4 
+
+SAMPLES = glob_wildcards("MCI_fastq_117_STS_FASTQ/{sample}.fastq.1.gz").sample
+
+rule all:
+    input:
+        expand("trimmed_FASTQ/{sample}.fastq.1.trimmed.gz", sample=SAMPLES),
+        expand("trimmed_FASTQ/{sample}.fastq.2.trimmed.gz", sample=SAMPLES)
+
+rule cutadapt_pe:
+  input:
+    r1 = "MCI_fastq_117_STS_FASTQ/{sample}.fastq.1.gz",
+    r2 = "MCI_fastq_117_STS_FASTQ/{sample}.fastq.2.gz"
+  output:
+    r1 = "trimmed_FASTQ/{sample}.fastq.1.trimmed.gz",
+    r2 = "trimmed_FASTQ/{sample}.fastq.2.trimmed.gz"
+  log:
+    "logs/logs_CutAdapt/{sample}.CutAdapt.log"
+  shell:
+    """
+    cutadapt \
+        -a {adapter} \
+        -A {adapter} \
+        -m {minimum_length} \
+        -q {quality_trimming} \
+        -O {overlap} \
+        --pair-filter=any \
+        --cores {threads} \
+        -o {output.r1} \
+        -p {output.r2} \
+        {input.r1} {input.r2} > {log} 2>&1
+    """
+
+```
+
+### Run CutAdapt Configuration File
+
+The pipeline must be run on helix due to compute power. 
+You also must redownload the CutAdapt tools in helix and activate Conda environment.
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+snakemake -s CutAdapt_pipeline.smk
 ```
 
 ## Create Indexing Pipeline Working Directory
 
-The pipeline requires a working directory where the FASTQ files and reference transcriptome can be accessed. You can symlink these files instead 
-of copying them into the pipeline directory to prevent the duplication of large data files in your directory.
+The pipeline requires a working directory where the FASTQ files and reference transcriptome can be accessed. 
 
 ```bash
 mkdir run_bulkRNA
