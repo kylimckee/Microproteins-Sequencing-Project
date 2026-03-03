@@ -146,12 +146,11 @@ rule multiqc:
 
 ### Run Raw QC Configuration File
 
-The pipeline must be run on helix due to compute power.
-You also must redownload the QC tools in helix and activate Conda environment.
+The pipeline must be run using sbatch on the Biowulf cluster.
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-snakemake -s rawQC_pipeline.smk
+sbatch --cpus-per-task=4 --mem=16G --time=06-00:00:00 \--wrap "snakemake -s rawQC_pipeline.smk -j 4"
 ```
 
 ## Create CutAdapt Pipeline Working Directory
@@ -228,12 +227,11 @@ rule cutadapt_pe:
 
 ### Run CutAdapt Configuration File
 
-The pipeline must be run on helix due to compute power. 
-You also must redownload the CutAdapt tools in helix and activate Conda environment.
+The pipeline must be run using sbatch on the Biowulf cluster.
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-snakemake -s CutAdapt_pipeline.smk
+sbatch --cpus-per-task=4 --mem=16G --time=06-00:00:00 \--wrap "snakemake -s CutAdapt_pipeline.smk -j 4"
 ```
 
 ## Create Indexing Pipeline Working Directory
