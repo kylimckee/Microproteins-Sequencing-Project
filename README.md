@@ -78,7 +78,7 @@ cd ..
 ls -R
 ```
 
-## Create QC Pipeline Working Directory
+## Create Raw QC Pipeline Working Directory
 
 The QC pipeline requires a working directory where the FASTQ files can be accessed. You can symlink these files instead of copying them into the pipeline directory to prevent the duplication of large data files in your directory.
 
@@ -93,7 +93,7 @@ cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 ln -s /data/mckeeka/bulkRNA_sarcoma/MCI_fastq_117_STS_FASTQ/
 ```
 
-## Generate QC Pipeline Configuration
+## Generate Raw QC Pipeline Configuration
 
 This pipeline was generated to perform analysis of the raw FASTQ data after sequencing.
 
@@ -234,6 +234,77 @@ cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 sbatch --cpus-per-task=4 --mem=16G --time=06-00:00:00 \--wrap "snakemake -s CutAdapt_pipeline.smk -j 4"
 ```
 
+## Create Trimmed QC Pipeline Working Directory
+
+The QC pipeline requires a working directory where the FASTQ files can be accessed. You can symlink these files instead of copying them into the pipeline directory to prevent the duplication of large data files in your directory.
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+mkdir trimmedQC
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/trimmedQC
+mkdir fastqc
+mkdir multiqc_data
+```
+
+## Generate Trimmed QC Pipeline Configuration
+
+This pipeline was generated to perform analysis of the raw FASTQ data after sequencing.
+
+### Install QC Tools
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+conda create -n trimmedQC -c bioconda snakemake fastqc multiqc -y
+conda activate trimmedQC
+```
+
+### Create Snakemake Raw QC Configuration File
+
+```bash
+nano trimmedQC_pipeline.smk
+
+# Add the following code to the configuration file:
+
+SAMPLES = glob_wildcards("MCI_fastq_117_STS_FASTQ/{sample}.fastq.1.gz").sample
+
+rule all:
+    input:
+        expand("trimmedQC/fastqc/{sample}.fastq.{read}_trimmedfastqc.zip", sample=SAMPLES, read=[1,2]),
+        "trimmedQC/trimmedQC_multiqc_report.html"
+
+rule fastqc:
+  input:
+    "trimmed_FASTQ/{sample}.fastq.{read}.trimmed.gz"
+  output:
+    html="trimmedQC/fastqc/{sample}.fastq.{read}_trimmedfastqc.html",
+    zip="trimmedQC/fastqc/{sample}.fastq.{read}_trimmedfastqc.zip"
+  threads: 4
+  shell:
+    """
+    fastqc -t {threads} -o trimmedQC/fastqc {input}
+    """
+
+rule multiqc:
+  input:
+    expand("trimmedQC/fastqc/{sample}.fastq.{read}_trimmedfastqc.zip",
+            sample=SAMPLES,
+            read=[1,2])
+  output:
+    "trimmedQC/trimmedQC_multiqc_report.html"
+  shell:
+    """
+    multiqc trimmedQC/fastqc -o trimmedQC
+    """
+```
+
+### Run Raw QC Configuration File
+
+The pipeline must be run using sbatch on the Biowulf cluster.
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+sbatch --cpus-per-task=4 --mem=16G --time=06-00:00:00 \--wrap "snakemake -s trimmedQC_pipeline.smk -j 4"
+```
 ## Create Indexing Pipeline Working Directory
 
 The pipeline requires a working directory where the FASTQ files and reference transcriptome can be accessed. 
