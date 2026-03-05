@@ -231,7 +231,7 @@ The pipeline must be run using sbatch on the Biowulf cluster.
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-sbatch --cpus-per-task=4 --mem=16G --time=06-00:00:00 \--wrap "snakemake -s CutAdapt_pipeline.smk -j 4"
+sbatch --cpus-per-task=4 --mem=16G --time=04-00:00:00 \--wrap "snakemake -s CutAdapt_pipeline.smk -j 4"
 ```
 
 ## Create Trimmed QC Pipeline Working Directory
@@ -303,7 +303,7 @@ The pipeline must be run using sbatch on the Biowulf cluster.
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-sbatch --cpus-per-task=4 --mem=16G --time=06-00:00:00 \--wrap "snakemake -s trimmedQC_pipeline.smk -j 4"
+sbatch --cpus-per-task=4 --mem=16G --time=02-00:00:00 \--wrap "snakemake -s trimmedQC_pipeline.smk -j 4"
 ```
 ## Create Indexing Pipeline Working Directory
 
