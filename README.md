@@ -276,8 +276,8 @@ rule fastqc:
   input:
     "trimmed_FASTQ/{sample}.fastq.{read}.trimmed.gz"
   output:
-    html="trimmedQC/fastqc/{sample}.fastq.{read}_trimmedfastqc.html",
-    zip="trimmedQC/fastqc/{sample}.fastq.{read}_trimmedfastqc.zip"
+    html="trimmedQC/fastqc/{sample}.fastq.{read}.trimmed_fastqc.html",
+    zip="trimmedQC/fastqc/{sample}.fastq.{read}.trimmed_fastqc.zip"
   threads: 4
   shell:
     """
@@ -286,7 +286,7 @@ rule fastqc:
 
 rule multiqc:
   input:
-    expand("trimmedQC/fastqc/{sample}.fastq.{read}_trimmedfastqc.zip",
+    expand("trimmedQC/fastqc/{sample}.fastq.{read}.trimmed_fastqc.zip",
             sample=SAMPLES,
             read=[1,2])
   output:
