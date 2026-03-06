@@ -243,7 +243,6 @@ cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 mkdir trimmedQC
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/trimmedQC
 mkdir fastqc
-mkdir multiqc_data
 ```
 
 ## Generate Trimmed QC Pipeline Configuration
