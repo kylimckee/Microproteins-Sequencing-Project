@@ -66,7 +66,7 @@ The human reference transcriptome (Ensembl release 115, GRCh38) was downloaded i
 cd /data/mckeeka/bulkRNA_sarcoma
 mkdir reference
 cd /data/mckeeka/bulkRNA_sarcoma/reference
-wget https://ftp.ensembl.org/pub/release-115/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
+wget https://ftp.ensembl.org/pub/release-115/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 wget https://ftp.ensembl.org/pub/release-115/gtf/homo_sapiens/Homo_sapiens.GRCh38.115.gtf.gz
 gunzip *.gz
 ```
@@ -161,7 +161,6 @@ The CutAdapt pipeline requires a working directory where the FASTQ files can be 
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-mkdir CutAdapt
 mkdir trimmed_FASTQ
 mkdir logs
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/logs
@@ -238,7 +237,7 @@ sbatch --cpus-per-task=4 --mem=16G --time=04-00:00:00 \--wrap "snakemake -s CutA
 
 ## Create Trimmed QC Pipeline Working Directory
 
-The QC pipeline requires a working directory where the FASTQ files can be accessed. You can symlink these files instead of copying them into the pipeline directory to prevent the duplication of large data files in your directory.
+The Trimmed QC pipeline requires a working directory where the FASTQ files can be accessed.
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
@@ -306,6 +305,176 @@ The pipeline must be run using sbatch on the Biowulf cluster.
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 sbatch --cpus-per-task=4 --mem=16G --time=02-00:00:00 \--wrap "snakemake -s trimmedQC_pipeline.smk -j 4"
 ```
+
+## Create Clean FASTQ Pipeline Working Directory
+
+The Clean FASTQ pipeline requires a working directory where the FASTQ files can be accessed.
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+mkdir cleanFASTQ
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/logs
+mkdir logs_cleanFASTQ
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+```
+
+## Generate Clean FASTQ Pipeline Configuration
+
+This pipeline was generated to clean the FASTQs after sequencing to eliminate contamination.
+
+### Install Clean FASTQ Tools
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+conda create -n cleanFASTQ -c bioconda snakemake kraken2 bowtie2 BEDTools SAMtools -y
+conda activate cleanFASTQ
+```
+
+### Create Standard Databases
+
+The Clean FASTQ pipeline requires a working directory where the standard reference databases can be accessed. You can symlink these files instead of copying them into the pipeline directory to prevent the duplication of large data files in your directory.
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
+mkdir clean_FASTQ
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/clean_FASTQ
+mkdir kraken2_output
+mkdir bowtie2_output
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/logs
+mkdir logs_cleanFASTQ
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/logs/logs_cleanFASTQ
+mkdir logs_kraken2
+mkdir logs_bowtie2
+
+cd /data/mckeeka/bulkRNA_sarcoma/reference
+
+#Copy Kraken2 Standard Reference Database from Biowulf
+cp -r /fdb/kraken/20220803_standard_kraken2 kraken2_database
+
+#Create Contaminant Reference for Bowtie2
+grep -E 'gene_biotype "(artifact|Mt_rRNA|Mt_tRNA|ribozyme|rRNA|rRNA_pseudogene|scaRNA|snoRNA|snRNA|vault_RNA)"' Homo_sapiens.GRCh38.115.gtf > contaminants.gtf
+
+awk '$3=="exon"' contaminants.gtf | \
+awk '{print$1"\t"$4-1"\t"$5}' > contaminants.bed
+
+bedtools getfasta -fi Homo_sapiens.GRCh38.dna.primary_assembly.fa -bed contaminants.bed -fo contaminants.fa
+
+mkdir -p contaminants_index
+bowtie2-build contaminants.fa contaminants_index/contaminants
+```
+
+### Create Snakemake Clean FASTQ Configuration File
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma
+nano cleanFASTQ_pipeline.smk
+
+# Add the following code to the configuration file:
+
+SAMPLES = glob_wildcards("run_bulkRNA/MCI_fastq_117_STS_FASTQ/{sample}.fastq.1.gz").sample
+
+rule all:
+    input:
+        expand("run_bulkRNA/clean_FASTQ/{sample}.fastq.{read}.clean.gz", sample=SAMPLES, read=[1,2])
+
+rule kraken2:
+  input:
+    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.1.trimmed.gz"
+    r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.2.trimmed.gz"
+  output:
+    report = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_report.txt",
+    output = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt"
+  threads: 4
+  log:
+    "run_bulkRNA/logs/logs_cleanFASTQ/logs_kraken2/{sample}.kraken2.log"
+  shell:
+    """
+    kraken2 \
+        --db reference/kraken2_database \
+        --paired {input.r1} {input.r2} \
+        --report {output.report} \
+        --output {output.output} \
+        --threads {threads} \
+        &> {log}
+    """
+
+rule extract_human_unclassified:
+  input:
+    kraken2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt"
+    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.1.trimmed.gz"
+    r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.2.trimmed.gz"
+  output:
+    r1 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.1.kraken.gz"
+    r2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.2.kraken.gz"
+  threads: 4
+  log:
+    "run_bulkRNA/logs/logs_cleanFASTQ/logs_kraken2/{sample}.kraken2_filter.log"
+  shell:
+    """
+    extract_kraken_reads.py \
+        -k {input.kraken} \
+        --s {input.r1} \
+        --s2 {input.r2} \
+        --taxid 9606 \
+        --include-children \
+        --include-unclassified \
+        --o {output.r1} \
+        --o2 {output.r2} \
+        --threads {threads} \
+        &> {log}
+    """
+
+rule bowtie2_contaminant_mapping:
+  input:
+    r1 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.1.kraken.gz"
+    r2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.2.kraken.gz"
+  output:
+    bam = "run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_contamination.bam"
+  threads: 4
+  log:
+    "run_bulkRNA/logs/logs_cleanFASTQ/logs_bowtie2/{sample}.bowtie2.log"
+  shell:
+    """
+    bowtie2 \
+        -x reference/contaminants_index \
+        -1 {input.r1} \
+        -2 {input.r2} \
+        --sensitive \
+        --threads {threads} \
+        | samtools view -b - > {output.bam} \
+        &> {log}
+    """
+
+rule filter_unmapped:
+  input:
+    bam = "run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_contamination.bam"
+  output:
+    r1 = "run_bulkRNA/clean_FASTQ/{sample}.fastq.1.clean.gz"
+    r2 = "run_bulkRNA/clean_FASTQ/{sample}.fastq.2.clean.gz"
+  log:
+    "run_bulkRNA/logs/logs_cleanFASTQ/logs_bowtie2/{sample}.bowtie2_filter.log"
+  shell:
+    """
+    samtools view -b -f 12 -F 256 {input.bam} > temp("run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_unmapped.bam")
+
+    bedtools bamtofastq \
+        -i run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_unmapped.bam \
+        -fq {output.r1} \
+        -fq2 {output.r2} \
+        &> {log}
+    """
+
+```
+
+### Run Trimmed QC Configuration File
+
+The pipeline must be run using sbatch on the Biowulf cluster.
+
+```bash
+cd /data/mckeeka/bulkRNA_sarcoma
+sbatch --cpus-per-task=4 --mem=16G --time=05-00:00:00 \--wrap "snakemake -s cleanFASTQ_pipeline.smk -j 4"
+```
+
 ## Create Indexing Pipeline Working Directory
 
 The pipeline requires a working directory where the FASTQ files and reference transcriptome can be accessed. 
