@@ -472,7 +472,7 @@ The pipeline must be run using sbatch on the Biowulf cluster.
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma
-sbatch --cpus-per-task=4 --mem=16G --time=05-00:00:00 \--wrap "snakemake -s cleanFASTQ_pipeline.smk -j 4"
+sbatch --cpus-per-task=4 --mem=64G --time=05-00:00:00 \--wrap "snakemake -s cleanFASTQ_pipeline.smk -j 4"
 ```
 
 ## Create Indexing Pipeline Working Directory
