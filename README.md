@@ -58,7 +58,7 @@ for f in *R2.fastq.gz; do
 done
 ```
 
-### Download Human Reference Transcriptome
+### Download Human Reference Transcriptome and GTF
 
 The human reference transcriptome (Ensembl release 115, GRCh38) was downloaded into a reference directory within bulkRNA_sarcoma.
 
@@ -67,6 +67,8 @@ cd /data/mckeeka/bulkRNA_sarcoma
 mkdir reference
 cd /data/mckeeka/bulkRNA_sarcoma/reference
 wget https://ftp.ensembl.org/pub/release-115/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
+wget https://ftp.ensembl.org/pub/release-115/gtf/homo_sapiens/Homo_sapiens.GRCh38.115.gtf.gz
+gunzip *.gz
 ```
 
 ### Visualize Working Directory 
@@ -257,7 +259,7 @@ conda create -n trimmedQC -c bioconda snakemake fastqc multiqc -y
 conda activate trimmedQC
 ```
 
-### Create Snakemake Raw QC Configuration File
+### Create Snakemake Trimmed QC Configuration File
 
 ```bash
 nano trimmedQC_pipeline.smk
@@ -296,7 +298,7 @@ rule multiqc:
     """
 ```
 
-### Run Raw QC Configuration File
+### Run Trimmed QC Configuration File
 
 The pipeline must be run using sbatch on the Biowulf cluster.
 
