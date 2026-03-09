@@ -379,7 +379,7 @@ rule all:
 
 rule kraken2:
   input:
-    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.1.trimmed.gz"
+    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.1.trimmed.gz",
     r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.2.trimmed.gz"
   output:
     report = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_report.txt",
@@ -400,11 +400,11 @@ rule kraken2:
 
 rule extract_human_unclassified:
   input:
-    kraken2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt"
-    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.1.trimmed.gz"
+    kraken2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt",
+    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.1.trimmed.gz",
     r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.2.trimmed.gz"
   output:
-    r1 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.1.kraken.gz"
+    r1 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.1.kraken.gz",
     r2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.2.kraken.gz"
   threads: 4
   log:
@@ -426,7 +426,7 @@ rule extract_human_unclassified:
 
 rule bowtie2_contaminant_mapping:
   input:
-    r1 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.1.kraken.gz"
+    r1 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.1.kraken.gz",
     r2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.2.kraken.gz"
   output:
     bam = "run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_contamination.bam"
@@ -449,7 +449,7 @@ rule filter_unmapped:
   input:
     bam = "run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_contamination.bam"
   output:
-    r1 = "run_bulkRNA/clean_FASTQ/{sample}.fastq.1.clean.gz"
+    r1 = "run_bulkRNA/clean_FASTQ/{sample}.fastq.1.clean.gz",
     r2 = "run_bulkRNA/clean_FASTQ/{sample}.fastq.2.clean.gz"
   log:
     "run_bulkRNA/logs/logs_cleanFASTQ/logs_bowtie2/{sample}.bowtie2_filter.log"
