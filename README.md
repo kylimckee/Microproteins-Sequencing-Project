@@ -371,7 +371,7 @@ nano cleanFASTQ_pipeline.smk
 
 # Add the following code to the configuration file:
 
-SAMPLES = glob_wildcards("run_bulkRNA/MCI_fastq_117_STS_FASTQ/{sample}.fastq.1.gz").sample
+SAMPLES = glob_wildcards("run_bulkRNA/trimmed_FASTQ/{sample}.fastq.1.trimmed.gz").sample
 
 rule all:
     input:
