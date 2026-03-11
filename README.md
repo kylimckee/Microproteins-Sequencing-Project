@@ -421,7 +421,7 @@ rule extract_human_unclassified:
         --include-children \
         --fastq-output \
         -o {output.r1} \
-        -o2 {output.r2) \
+        -o2 {output.r2} \
         &> {log}
     """
 
