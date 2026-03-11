@@ -401,7 +401,7 @@ rule kraken2:
 rule extract_human_unclassified:
   input:
     kraken2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt",
-    report = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_report.txt"
+    report = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_report.txt",
     r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.1.trimmed.gz",
     r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.2.trimmed.gz"
   output:
