@@ -326,7 +326,7 @@ This pipeline was generated to clean the FASTQs after sequencing to eliminate co
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-conda create -n cleanFASTQ -c bioconda snakemake kraken2 bowtie2 BEDTools SAMtools -y
+conda create -n cleanFASTQ -c bioconda snakemake kraken2 bowtie2 KrakenTools BEDTools SAMtools -y
 conda activate cleanFASTQ
 ```
 
@@ -401,26 +401,27 @@ rule kraken2:
 rule extract_human_unclassified:
   input:
     kraken2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt",
+    report = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_report.txt"
     r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.1.trimmed.gz",
     r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.2.trimmed.gz"
   output:
     r1 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.1.kraken.gz",
     r2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.2.kraken.gz"
-  threads: 4
   log:
     "run_bulkRNA/logs/logs_cleanFASTQ/logs_kraken2/{sample}.kraken2_filter.log"
   shell:
     """
     extract_kraken_reads.py \
         -k {input.kraken2} \
-        --s {input.r1} \
-        --s2 {input.r2} \
+        -r {input.report} \
+        -s {input.r1} \
+        -s2 {input.r2} \
         --taxid 9606 \
         --include-children \
         --include-unclassified \
-        --o {output.r1} \
-        --o2 {output.r2} \
-        --threads {threads} \
+        --fastq-output \
+        -o {output.r1} \
+        -o2 {output.r2} \
         &> {log}
     """
 
