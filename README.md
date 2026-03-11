@@ -119,7 +119,7 @@ SAMPLES = glob_wildcards("MCI_fastq_117_STS_FASTQ/{sample}.fastq.1.gz").sample
 rule all:
     input:
         expand("rawQC/fastqc/{sample}.fastq.{read}_fastqc.zip", sample=SAMPLES, read=[1,2]),
-        "rawQC/rawQC_multiqc_report.html"
+        "rawQC/multiqc_report.html"
 
 rule fastqc:
   input:
@@ -270,7 +270,7 @@ SAMPLES = glob_wildcards("MCI_fastq_117_STS_FASTQ/{sample}.fastq.1.gz").sample
 rule all:
     input:
         expand("trimmedQC/fastqc/{sample}.fastq.{read}.trimmed_fastqc.zip", sample=SAMPLES, read=[1,2]),
-        "trimmedQC/trimmedQC_multiqc_report.html"
+        "trimmedQC/multiqc_report.html"
 
 rule fastqc:
   input:
