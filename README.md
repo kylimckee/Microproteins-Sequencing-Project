@@ -412,7 +412,7 @@ rule extract_human_unclassified:
   shell:
     """
     extract_kraken_reads.py \
-        -k {input.kraken} \
+        -k {input.kraken2} \
         --s {input.r1} \
         --s2 {input.r2} \
         --taxid 9606 \
