@@ -411,36 +411,18 @@ rule extract_human_unclassified:
     "run_bulkRNA/logs/logs_cleanFASTQ/logs_kraken2/{sample}.kraken2_filter.log"
   shell:
     """
-    #Extract human reads
     extract_kraken_reads.py \
         -k {input.kraken2} \
         -r {input.report} \
         -s {input.r1} \
         -s2 {input.r2} \
         -t 9606 \
+        -t 0 \
         --include-children \
         --fastq-output \
-        -o human_1.fastq.gz \
-        -o2 human_2.fastq.gz
-
-    #Extract unclassified reads
-    extract_kraken_reads.py \
-        -k {input.kraken2} \
-        -r {input.report} \
-        -s {input.r1} \
-        -s2 {input.r2} \
-        -t 0 \
-        --fastq-output \
-        -o unclassified_1.fastq.gz \
-        -o2 unclassified_2.fastq.gz
-
-    #Combine human and unclassified reads
-    cat human_1.fastq.gz unclassified_1.fastq.gz > {output.r1}
-    cat human_2.fastq.gz unclassified_2.fastq.gz > {output.r2}
-
-    #Remove temporary files
-    rm human_1.fastq.gz human_2.fastq.gz unclassified_1.fastq.gz unclassified_2.fastq.gz > {output.r1} \
-    &> {log}
+        -o {output.r1} \
+        -o2 {output.r2) \
+        &> {log}
     """
 
 rule bowtie2_contaminant_mapping:
@@ -460,8 +442,8 @@ rule bowtie2_contaminant_mapping:
         -2 {input.r2} \
         --sensitive \
         --threads {threads} \
+        2> {log}
         | samtools view -b - > {output.bam} \
-        &> {log}
     """
 
 rule filter_unmapped:
