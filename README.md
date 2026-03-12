@@ -437,7 +437,7 @@ rule bowtie2_contaminant_mapping:
   shell:
     """
     bowtie2 \
-        -x reference/contaminants_index \
+        -x reference/contaminants_index/contaminants \
         -1 {input.r1} \
         -2 {input.r2} \
         --sensitive \
