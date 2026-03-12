@@ -326,7 +326,7 @@ This pipeline was generated to clean the FASTQs after sequencing to eliminate co
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-conda create -n cleanFASTQ -c bioconda snakemake kraken2 bowtie2 KrakenTools BEDTools SAMtools -y
+conda create -n cleanFASTQ -c bioconda -c conda-forge snakemake kraken2 bowtie2 KrakenTools BEDTools samtools -y
 conda activate cleanFASTQ
 ```
 
@@ -442,8 +442,8 @@ rule bowtie2_contaminant_mapping:
         -2 {input.r2} \
         --sensitive \
         --threads {threads} \
-        2> {log}
-        | samtools view -b - > {output.bam} \
+        | samtools view -bS - \
+        > {output} 2> {log}
     """
 
 rule filter_unmapped:
@@ -456,13 +456,15 @@ rule filter_unmapped:
     "run_bulkRNA/logs/logs_cleanFASTQ/logs_bowtie2/{sample}.bowtie2_filter.log"
   shell:
     """
-    samtools view -b -f 12 -F 256 {input.bam} > temp("run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_unmapped.bam")
+    samtools view -b -f 12 -F 256 {input.bam} > run_bulkRNA/clean_FASTQ/bowtie2_output/{wildcards.sample}_unmapped.bam
 
     bedtools bamtofastq \
-        -i run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_unmapped.bam \
+        -i run_bulkRNA/clean_FASTQ/bowtie2_output/{wildcards.sample}_unmapped.bam \
         -fq {output.r1} \
         -fq2 {output.r2} \
         &> {log}
+
+    rm run_bulkRNA/clean_FASTQ/bowtie2_output/{wildcards.sample}_unmapped.bam
     """
 
 ```
