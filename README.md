@@ -411,18 +411,37 @@ rule extract_human_unclassified:
     "run_bulkRNA/logs/logs_cleanFASTQ/logs_kraken2/{sample}.kraken2_filter.log"
   shell:
     """
+    #Extract human reads
     extract_kraken_reads.py \
         -k {input.kraken2} \
         -r {input.report} \
         -s {input.r1} \
         -s2 {input.r2} \
         -t 9606 \
-        -t 0 \
         --include-children \
         --fastq-output \
-        -o {output.r1} \
-        -o2 {output.r2} \
-        &> {log}
+        -o human_1_{wildcards.sample}.fastq.gz \
+        -o2 human_2_{wildcards.sample}.fastq.gz
+
+    #Extract unclassified reads
+    extract_kraken_reads.py \
+        -k {input.kraken2} \
+        -r {input.report} \
+        -s {input.r1} \
+        -s2 {input.r2} \
+        -t 0 \
+        --fastq-output \
+        -o unclassified_1_{wildcards.sample}.fastq.gz \
+        -o2 unclassified_2_{wildcards.sample}.fastq.gz
+
+    #Combine human and unclassified reads
+    cat human_1_{wildcards.sample}.fastq.gz unclassified_1_{wildcards.sample}.fastq.gz > {output.r1}
+    cat human_2_{wildcards.sample}.fastq.gz unclassified_2_{wildcards.sample}.fastq.gz > {output.r2}
+
+    #Remove temporary files
+    rm human_1_{wildcards.sample}.fastq.gz human_2_{wildcards.sample}.fastq.gz \
+        unclassified_1_{wildcards.sample}.fastq.gz unclassified_2_{wildcards.sample}.fastq.gz \
+    &> {log}
     """
 
 rule bowtie2_contaminant_mapping:
@@ -437,13 +456,13 @@ rule bowtie2_contaminant_mapping:
   shell:
     """
     bowtie2 \
-        -x reference/contaminants_index/contaminants \
+        -x reference/contaminants_index \
         -1 {input.r1} \
         -2 {input.r2} \
         --sensitive \
         --threads {threads} \
-        | samtools view -bS - \
-        > {output} 2> {log}
+        | samtools view -b - > {output.bam} \
+        &> {log}
     """
 
 rule filter_unmapped:
@@ -456,20 +475,18 @@ rule filter_unmapped:
     "run_bulkRNA/logs/logs_cleanFASTQ/logs_bowtie2/{sample}.bowtie2_filter.log"
   shell:
     """
-    samtools view -b -f 12 -F 256 {input.bam} > run_bulkRNA/clean_FASTQ/bowtie2_output/{wildcards.sample}_unmapped.bam
+    samtools view -b -f 12 -F 256 {input.bam} > temp("run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_unmapped.bam")
 
     bedtools bamtofastq \
-        -i run_bulkRNA/clean_FASTQ/bowtie2_output/{wildcards.sample}_unmapped.bam \
+        -i run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_unmapped.bam \
         -fq {output.r1} \
         -fq2 {output.r2} \
         &> {log}
-
-    rm run_bulkRNA/clean_FASTQ/bowtie2_output/{wildcards.sample}_unmapped.bam
     """
 
 ```
 
-### Run Trimmed QC Configuration File
+### Run Clean FASTQ Configuration File
 
 The pipeline must be run using sbatch on the Biowulf cluster.
 
