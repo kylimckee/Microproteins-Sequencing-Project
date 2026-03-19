@@ -240,9 +240,9 @@ sbatch --cpus-per-task=4 --mem=16G --time=04-00:00:00 \--wrap "snakemake -s CutA
 The Trimmed QC pipeline requires a working directory where the FASTQ files can be accessed.
 
 ```bash
-cd /data/mckeeka/bulkRNA_RMS/run_bulkRNA
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 mkdir trimmedQC
-cd /data/mckeeka/bulkRNA_RMS/run_bulkRNA/trimmedQC
+cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/trimmedQC
 mkdir fastqc
 ```
 
@@ -303,7 +303,7 @@ The pipeline must be run using sbatch on the Biowulf cluster.
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-sbatch --cpus-per-task=4 --mem=16G --time=02:00:00 \--wrap "snakemake -s trimmedQC_pipeline.smk -j 4"
+sbatch --cpus-per-task=4 --mem=16G --time=02-00:00:00 \--wrap "snakemake -s trimmedQC_pipeline.smk -j 4"
 ```
 
 ## Create Clean FASTQ Pipeline Working Directory
