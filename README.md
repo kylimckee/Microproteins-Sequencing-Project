@@ -440,7 +440,7 @@ rule extract_human_unclassified:
 
     #Remove temporary files
     rm human_1_{wildcards.sample}.fastq.gz human_2_{wildcards.sample}.fastq.gz \
-        unclassified_1_{wildcards.sample}.fastq.gz unclassified_2_{wildcards.sample}.fastq.gz \
+        unclassified_1_{wildcards.sample}.fastq.gz unclassified_2_{wildcards.sample}.fastq.gz
     &> {log}
     """
 
