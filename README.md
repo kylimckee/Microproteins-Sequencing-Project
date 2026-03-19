@@ -306,17 +306,6 @@ cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
 sbatch --cpus-per-task=4 --mem=16G --time=02-00:00:00 \--wrap "snakemake -s trimmedQC_pipeline.smk -j 4"
 ```
 
-## Create Clean FASTQ Pipeline Working Directory
-
-The Clean FASTQ pipeline requires a working directory where the FASTQ files can be accessed.
-
-```bash
-cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-mkdir cleanFASTQ
-cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/logs
-mkdir logs_cleanFASTQ
-cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
-```
 
 ## Generate Clean FASTQ Pipeline Configuration
 
