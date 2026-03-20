@@ -498,7 +498,7 @@ cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA/
 
 This pipeline was generated to count the reads that were filtered out of each step of the Clean FASTQ pipeline.
 
-### Install CutAdapt Tools
+### Install Read Counts Tools
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/run_bulkRNA
@@ -506,7 +506,7 @@ conda create -n ReadCounts -c conda-forge -c bioconda snakemake python=3.10 pand
 conda activate ReadCounts
 ```
 
-### Create Snakemake CutAdapt Configuration File
+### Create Snakemake Read Counts Configuration File
 
 ```bash
 nano ReadCounts_pipeline.smk
@@ -579,7 +579,7 @@ rule summarize_read_counts:
 
 ```
 
-### Run CutAdapt Configuration File
+### Run Read Counts Configuration File
 
 The pipeline must be run using sbatch on the Biowulf cluster.
 
