@@ -40,24 +40,6 @@ mkdir bulkRNA_sarcoma
 cd /data/mckeeka/bulkRNA_sarcoma
 ```
 
-### Download and Reformat FASTQ Files
-
-Sarcoma FASTQ files were transferred to a folder called "MCI_fastq_117_STS_FASTQ" in the bulkRNA_sarcoma directory using Globus.
-The following code changes the file names to fit the pipeline format (<sample>.fastq.<read>.gz).
-
-```bash
-cd /data/mckeeka/bulkRNA_sarcoma/MCI_fastq_117_STS_FASTQ
-for f in *R1.fastq.gz; do
-  sample=$(echo "$f" | sed -E 's/(.*)\.R1\.fastq\.gz/\1/')
-  mv "$f" "${sample}.fastq.1.gz"
-done
-
-for f in *R2.fastq.gz; do
-  sample=$(echo "$f" | sed -E 's/(.*)\.R2\.fastq\.gz/\1/')
-  mv "$f" "${sample}.fastq.2.gz"
-done
-```
-
 ### Download Human Reference Transcriptome and GTF
 
 The human reference transcriptome (Ensembl release 115, GRCh38) was downloaded into a reference directory within bulkRNA_sarcoma.
