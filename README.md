@@ -344,10 +344,11 @@ nano cleanFASTQ_pipeline.smk
 # Add the following code to the configuration file:
 
 SAMPLES = glob_wildcards("run_bulkRNA/trimmed_FASTQ/{sample}.fastq.R1.trimmed.gz").sample
+READS = ["R1", "R2"]
 
 rule all:
     input:
-        expand("run_bulkRNA/clean_FASTQ/{sample}.fastq.{read}.clean.gz", sample=SAMPLES, read=[R1,R2])
+        expand("run_bulkRNA/clean_FASTQ/{sample}.fastq.{read}.clean.gz", sample=SAMPLES, read=READS)
 
 rule kraken2:
   input:
