@@ -707,5 +707,5 @@ The pipeline must be run using sbatch on the Biowulf cluster.
 
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/
-sbatch --cpus-per-task=4 --mem=64G --time=06-00:00:00 --wrap "snakemake -s STARmap_pipeline.smk --cores 4"
+sbatch --cpus-per-task=4 --mem=64G --time=10-00:00:00 --wrap "snakemake -s STARmap_pipeline.smk --cores 4"
 ```
