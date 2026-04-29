@@ -408,8 +408,8 @@ rule extract_human_unclassified:
         -o2 unclassified_2_{wildcards.sample}.fastq.gz
 
     #Combine human and unclassified reads
-    cat human_1_{wildcards.sample}.fastq.gz unclassified_1_{wildcards.sample}.fastq.gz > {output.r1}
-    cat human_2_{wildcards.sample}.fastq.gz unclassified_2_{wildcards.sample}.fastq.gz > {output.r2}
+    zcat human_1_{wildcards.sample}.fastq.gz unclassified_1_{wildcards.sample}.fastq.gz | gzip > {output.r1}
+    zcat human_2_{wildcards.sample}.fastq.gz unclassified_2_{wildcards.sample}.fastq.gz | gzip > {output.r2}
 
     #Remove temporary files
     rm human_1_{wildcards.sample}.fastq.gz human_2_{wildcards.sample}.fastq.gz \
