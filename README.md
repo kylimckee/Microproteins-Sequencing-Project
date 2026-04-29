@@ -352,8 +352,8 @@ rule all:
 
 rule kraken2:
   input:
-    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.R1.trimmed.gz",
-    r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.R2.trimmed.gz"
+    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.{read}.trimmed.gz",
+    r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.{read}.trimmed.gz"
   output:
     report = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_report.txt",
     output = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt"
@@ -384,37 +384,41 @@ rule extract_human_unclassified:
     "run_bulkRNA/logs/logs_cleanFASTQ/logs_kraken2/{sample}.kraken2_filter.log"
   shell:
     """
-    #Extract human reads
-    extract_kraken_reads.py \
-        -k {input.kraken2} \
-        -r {input.report} \
-        -s {input.r1} \
-        -s2 {input.r2} \
-        -t 9606 \
-        --include-children \
-        --fastq-output \
-        -o human_1_{wildcards.sample}.fastq.gz \
-        -o2 human_2_{wildcards.sample}.fastq.gz
+    tmp_h1=$(mktemp)
+    tmp_h2=$(mktemp)
+    tmp_u1=$(mktemp)
+    tmp_u2=$(mktemp)
 
-    #Extract unclassified reads
     {{
-    extract_kraken_reads.py \
-        -k {input.kraken2} \
-        -r {input.report} \
-        -s {input.r1} \
-        -s2 {input.r2} \
-        -t 0 \
-        --fastq-output \
-        -o unclassified_1_{wildcards.sample}.fastq.gz \
-        -o2 unclassified_2_{wildcards.sample}.fastq.gz
+        #Extract human reads
+        extract_kraken_reads.py \
+            -k {input.kraken2} \
+            -r {input.report} \
+            -s {input.r1} \
+            -s2 {input.r2} \
+            -t 9606 \
+            --include-children \
+            --fastq-output \
+            -o $tmp_h1 \
+            -o2 $tmp_h2
 
-    #Combine human and unclassified reads
-    cat human_1_{wildcards.sample}.fastq unclassified_1_{wildcards.sample}.fastq | gzip > {output.r1}
-    cat human_2_{wildcards.sample}.fastq unclassified_2_{wildcards.sample}.fastq | gzip > {output.r2}
+        #Extract unclassified reads
+        extract_kraken_reads.py \
+            -k {input.kraken2} \
+            -r {input.report} \
+            -s {input.r1} \
+            -s2 {input.r2} \
+            -t 0 \
+            --fastq-output \
+            -o $tmp_u1 \
+            -o2 $tmp_u2
 
-    #Remove temporary files
-    rm human_1_{wildcards.sample}.fastq human_2_{wildcards.sample}.fastq \
-        unclassified_1_{wildcards.sample}.fastq unclassified_2_{wildcards.sample}.fastq
+        #Combine human and unclassified reads
+        cat "$tmp_h1" "$tmp_u1" | gzip -c > {output.r1}
+        cat "$tmp_h2" "$tmp_u2" | gzip -c > {output.r2}
+
+        #Remove temporary files
+        rm -f "$tmp_h1" "$tmp_h2" "$tmp_u1" "$tmp_u2"
     }} &> {log}
     """
 
@@ -430,13 +434,13 @@ rule bowtie2_contaminant_mapping:
   shell:
     """
     bowtie2 \
-        -x reference/contaminants_index \
+        -x reference/contaminants_index/contaminants \
         -1 {input.r1} \
         -2 {input.r2} \
         --sensitive \
         --threads {threads} \
-        | samtools view -b - > {output.bam} \
-        &> {log}
+        2> {log} \
+        | samtools view -b -o {output.bam} -
     """
 
 rule filter_unmapped:
@@ -449,14 +453,26 @@ rule filter_unmapped:
     "run_bulkRNA/logs/logs_cleanFASTQ/logs_bowtie2/{sample}.bowtie2_filter.log"
   shell:
     """
-    samtools view -b -f 12 -F 256 {input.bam} > temp("run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_unmapped.bam")
+    set -euo pipefail
+
+    tmp_bam=$(mktemp --suffix=.bam)
+    tmp_namesort=$(mktemp --suffix=.bam)
+    tmp_r1=$(mktemp --suffix=.fq)
+    tmp_r2=$(mktemp --suffix=.fq)
+
+    samtools view -b -f 12 -F 256 {input.bam} > "$tmp_bam"
+    samtools sort -n -o "$tmp_namesort" "$tmp_bam"
 
     bedtools bamtofastq \
-        -i run_bulkRNA/clean_FASTQ/bowtie2_output/{sample}_unmapped.bam \
-        -fq {output.r1} \
-        -fq2 {output.r2} \
-        &> {log}
-    """
+        -i "$tmp_namesort" \
+        -fq "$tmp_r1" \
+        -fq2 "$tmp_r2"
+
+    gzip -c "$tmp_r1" > {output.r1}
+    gzip -c "$tmp_r2" > {output.r2}
+
+    rm -f "$tmp_bam" "$tmp_namesort" "$tmp_r1" "$tmp_r2"
+    """ + "&> {log}"
 
 ```
 
