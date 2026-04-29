@@ -352,8 +352,8 @@ rule all:
 
 rule kraken2:
   input:
-    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.{read}.trimmed.gz",
-    r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.{read}.trimmed.gz"
+    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.R1.trimmed.gz",
+    r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.R2.trimmed.gz"
   output:
     report = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_report.txt",
     output = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt"
@@ -372,25 +372,26 @@ rule kraken2:
     """
 
 rule extract_human_unclassified:
-  input:
-    kraken2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt",
-    report = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_report.txt",
-    r1 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.R1.trimmed.gz",
-    r2 = "run_bulkRNA/trimmed_FASTQ/{sample}.fastq.R2.trimmed.gz"
-  output:
-    r1 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.R1.kraken.gz",
-    r2 = "run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.R2.kraken.gz"
-  log:
-    "run_bulkRNA/logs/logs_cleanFASTQ/logs_kraken2/{sample}.kraken2_filter.log"
-  shell:
-    """
-    tmp_h1=$(mktemp)
-    tmp_h2=$(mktemp)
-    tmp_u1=$(mktemp)
-    tmp_u2=$(mktemp)
+    input:
+        kraken2="run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_output.txt",
+        report="run_bulkRNA/clean_FASTQ/kraken2_output/{sample}_report.txt",
+        r1="run_bulkRNA/trimmed_FASTQ/{sample}.fastq.R1.trimmed.gz",
+        r2="run_bulkRNA/trimmed_FASTQ/{sample}.fastq.R2.trimmed.gz"
+    output:
+        r1="run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.R1.kraken.gz",
+        r2="run_bulkRNA/clean_FASTQ/kraken2_output/{sample}.fastq.R2.kraken.gz"
+    log:
+        "run_bulkRNA/logs/logs_cleanFASTQ/logs_kraken2/{sample}.kraken2_filter.log"
+    shell:
+        r"""
+        set -euo pipefail
 
-    {{
-        #Extract human reads
+        tmp_h1=$(mktemp)
+        tmp_h2=$(mktemp)
+        tmp_u1=$(mktemp)
+        tmp_u2=$(mktemp)
+
+        # Extract human reads
         extract_kraken_reads.py \
             -k {input.kraken2} \
             -r {input.report} \
@@ -399,10 +400,10 @@ rule extract_human_unclassified:
             -t 9606 \
             --include-children \
             --fastq-output \
-            -o $tmp_h1 \
-            -o2 $tmp_h2
+            -o "$tmp_h1" \
+            -o2 "$tmp_h2"
 
-        #Extract unclassified reads
+        # Extract unclassified reads
         extract_kraken_reads.py \
             -k {input.kraken2} \
             -r {input.report} \
@@ -410,17 +411,21 @@ rule extract_human_unclassified:
             -s2 {input.r2} \
             -t 0 \
             --fastq-output \
-            -o $tmp_u1 \
-            -o2 $tmp_u2
+            -o "$tmp_u1" \
+            -o2 "$tmp_u2"
 
-        #Combine human and unclassified reads
-        cat "$tmp_h1" "$tmp_u1" | gzip -c > {output.r1}
-        cat "$tmp_h2" "$tmp_u2" | gzip -c > {output.r2}
+        # Ensure files exist (handles edge cases)
+        [ -s "$tmp_h1" ] || touch "$tmp_h1"
+        [ -s "$tmp_h2" ] || touch "$tmp_h2"
+        [ -s "$tmp_u1" ] || touch "$tmp_u1"
+        [ -s "$tmp_u2" ] || touch "$tmp_u2"
 
-        #Remove temporary files
+        # Combine
+        cat "$tmp_h1" "$tmp_u1" | gzip > {output.r1}
+        cat "$tmp_h2" "$tmp_u2" | gzip > {output.r2}
+
         rm -f "$tmp_h1" "$tmp_h2" "$tmp_u1" "$tmp_u2"
-    }} &> {log}
-    """
+        """ + " &> {log}"
 
 rule bowtie2_contaminant_mapping:
   input:
@@ -452,7 +457,7 @@ rule filter_unmapped:
   log:
     "run_bulkRNA/logs/logs_cleanFASTQ/logs_bowtie2/{sample}.bowtie2_filter.log"
   shell:
-    """
+    r"""
     set -euo pipefail
 
     tmp_bam=$(mktemp --suffix=.bam)
