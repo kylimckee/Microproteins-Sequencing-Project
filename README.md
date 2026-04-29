@@ -409,12 +409,12 @@ rule extract_human_unclassified:
         -o2 unclassified_2_{wildcards.sample}.fastq.gz
 
     #Combine human and unclassified reads
-    zcat human_1_{wildcards.sample}.fastq.gz unclassified_1_{wildcards.sample}.fastq.gz | gzip > {output.r1}
-    zcat human_2_{wildcards.sample}.fastq.gz unclassified_2_{wildcards.sample}.fastq.gz | gzip > {output.r2}
+    cat human_1_{wildcards.sample}.fastq unclassified_1_{wildcards.sample}.fastq | gzip > {output.r1}
+    cat human_2_{wildcards.sample}.fastq unclassified_2_{wildcards.sample}.fastq | gzip > {output.r2}
 
     #Remove temporary files
-    rm human_1_{wildcards.sample}.fastq.gz human_2_{wildcards.sample}.fastq.gz \
-        unclassified_1_{wildcards.sample}.fastq.gz unclassified_2_{wildcards.sample}.fastq.gz
+    rm human_1_{wildcards.sample}.fastq human_2_{wildcards.sample}.fastq \
+        unclassified_1_{wildcards.sample}.fastq unclassified_2_{wildcards.sample}.fastq
     }} &> {log}
     """
 
@@ -1138,7 +1138,7 @@ rule count_qc_plots:
 The pipeline must be run using sbatch on the Biowulf cluster.
 
 ```bash
-sbatch --time=00-02:00:00  --cpus-per-task=8 --mem=32G --wrap="snakemake -s Microproteins_highconfidence.smk --cores 8"
+sbatch --time=00-08:00:00  --cpus-per-task=8 --mem=32G --wrap="snakemake -s Microproteins_highconfidence.smk --cores 8"
 ```
 
 ### Create Discovery Microproteins Configuration File
