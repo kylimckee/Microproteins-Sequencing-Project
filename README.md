@@ -397,6 +397,7 @@ rule extract_human_unclassified:
         -o2 human_2_{wildcards.sample}.fastq.gz
 
     #Extract unclassified reads
+    {
     extract_kraken_reads.py \
         -k {input.kraken2} \
         -r {input.report} \
@@ -414,7 +415,7 @@ rule extract_human_unclassified:
     #Remove temporary files
     rm human_1_{wildcards.sample}.fastq.gz human_2_{wildcards.sample}.fastq.gz \
         unclassified_1_{wildcards.sample}.fastq.gz unclassified_2_{wildcards.sample}.fastq.gz
-    &> {log}
+    } &> {log}
     """
 
 rule bowtie2_contaminant_mapping:
