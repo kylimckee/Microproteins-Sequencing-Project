@@ -1103,7 +1103,7 @@ rule count_qc_plots:
 The pipeline must be run using sbatch on the Biowulf cluster.
 
 ```bash
-sbatch --time=01-00:00:00  --cpus-per-task=8 --mem=32G --wrap="snakemake -s Microproteins_highconfidence.smk --cores 8"
+sbatch --time=00-02:00:00  --cpus-per-task=8 --mem=32G --wrap="snakemake -s Microproteins_highconfidence.smk --cores 8"
 ```
 
 ### Create Discovery Microproteins Configuration File
@@ -1223,7 +1223,7 @@ conda activate smorf
 ### Create Novel Microproteins High Confidence Configuration File
 
 ```bash
-cd /data/mckeeka/bulkRNA_RMS
+cd /data/mckeeka/bulkRNA_sarcoma
 
 nano Microproteins_Novel_HighConfidence.r
 
