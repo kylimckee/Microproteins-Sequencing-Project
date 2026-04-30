@@ -1725,7 +1725,7 @@ message("Done. Wrote: ", paste0(out_prefix, ".smorf_classification.tsv"))
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/
 
-sbatch --job-name=smorf --cpus-per-task=4 --mem=32G --time=1:00:00 --output=smorf_%j.out --error=smorf_%j.err --wrap="set -x; echo START $(date); source ~/.bashrc; conda activate smorf; which Rscript; echo ENV_OK; Rscript Microproteins_Novel_HighConfidence.r; echo DONE $(date)"
+sbatch --job-name=smorf --cpus-per-task=4 --mem=32G --time=4:00:00 --output=smorf_%j.out --error=smorf_%j.err --wrap="set -x; echo START $(date); source ~/.bashrc; conda activate smorf; which Rscript; echo ENV_OK; Rscript Microproteins_Novel_HighConfidence.r; echo DONE $(date)"
 
 ```
 
@@ -2178,6 +2178,6 @@ message("Done. Wrote: ", paste0(out_prefix, ".smorf_classification.tsv"))
 ```bash
 cd /data/mckeeka/bulkRNA_sarcoma/
 
-sbatch --job-name=smorf --cpus-per-task=4 --mem=32G --time=5:00:00 --output=smorf_%j.out --error=smorf_%j.err --wrap="set -x; echo START $(date); source ~/.bashrc; conda activate smorf; which Rscript; echo ENV_OK; Rscript Microproteins_Novel_Discovery.r; echo DONE $(date)"
+sbatch --job-name=smorf --cpus-per-task=4 --mem=32G --time=8:00:00 --output=smorf_%j.out --error=smorf_%j.err --wrap="set -x; echo START $(date); source ~/.bashrc; conda activate smorf; which Rscript; echo ENV_OK; Rscript Microproteins_Novel_Discovery.r; echo DONE $(date)"
 
 ```
